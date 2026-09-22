@@ -1,0 +1,3 @@
+# Google C++ Style Guide: https://google.github.io/styleguide/cppguide.html
+# Format C++ files with: clang-format -i path/to/file.cpp
+BasedOnStyle: Google

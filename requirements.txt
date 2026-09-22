@@ -1,0 +1,4 @@
+# Runtime dependencies for downloading the dataset and generating masks.
+huggingface_hub==1.8.0
+numpy==2.0.2
+pillow==11.3.0

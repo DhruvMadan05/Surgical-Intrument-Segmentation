@@ -1,0 +1,2 @@
+# Dev-only tooling (not needed to run the project, just to format code).
+pyink==24.10.1

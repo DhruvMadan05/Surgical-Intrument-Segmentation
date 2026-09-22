@@ -1,0 +1,9 @@
+[tool.pyink]
+# Google's own formatter (a Black fork) configured to match the Google
+# Python Style Guide: https://google.github.io/styleguide/pyguide.html
+# Run with: .venv/bin/python -m pyink .
+pyink = true
+line-length = 80
+preview = true
+pyink-indentation = 4
+pyink-use-majority-quotes = true

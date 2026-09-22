@@ -1,0 +1,54 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.eggs/
+*.egg
+.Python
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# C++
+*.o
+*.obj
+*.out
+*.exe
+*.a
+*.so
+*.dylib
+*.dSYM/
+
+# Build directories
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+
+# Data / model artifacts (uncomment if you don't want to track these)
+# *.pt
+# *.pth
+# *.h5
+# *.ckpt
+# data/

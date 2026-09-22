@@ -46,6 +46,12 @@ Makefile
 .idea/
 *.swp
 
+
+.cache/
+
+# Downloaded dataset (multi-GB, fetched via scripts/ not committed)
+dataset/
+
 # Data / model artifacts (uncomment if you don't want to track these)
 # *.pt
 # *.pth

@@ -24,16 +24,12 @@ mask has a nonzero pixel) alongside each `instrument_dataset_N/`:
 
 ## Code style
 
-This project follows Google's public style guides:
-
-- **Python**: [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html).
-  Formatted with `pyink` (Google's Black fork), configured in
-  `pyproject.toml` (installed via `requirements-dev.txt`). Run before
-  committing:
+- **Python**: [PEP 8](https://peps.python.org/pep-0008/). Formatted with
+  `black`, configured in `pyproject.toml` (installed via
+  `requirements-dev.txt`). Run before committing:
   ```bash
-  ./.venv/bin/python -m pyink .
+  ./.venv/bin/python -m black .
   ```
-  Docstrings use the Google format (`Args:`, `Returns:`, `Raises:`).
 
 - **C++**: [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
   Formatted with `clang-format` (`.clang-format` at the repo root sets

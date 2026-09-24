@@ -52,9 +52,9 @@ Makefile
 # Downloaded dataset (multi-GB, fetched via scripts/ not committed)
 dataset/
 
-# Data / model artifacts (uncomment if you don't want to track these)
-# *.pt
-# *.pth
-# *.h5
-# *.ckpt
-# data/
+# Model checkpoints (large binaries, not committed)
+checkpoints/
+*.pt
+*.pth
+*.h5
+*.ckpt

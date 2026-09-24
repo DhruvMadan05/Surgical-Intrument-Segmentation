@@ -22,6 +22,30 @@ mask has a nonzero pixel) alongside each `instrument_dataset_N/`:
 ./.venv/bin/python scripts/make_binary_masks.py
 ```
 
+## Baseline & model training
+
+Both scripts below use the shared `segmentation/` package (train/test
+split, IoU/Dice metrics) and must be run as modules from the repo root
+so that package is importable:
+
+```bash
+# Classical Otsu-thresholding baseline, evaluated on the held-out test
+# split (instrument_dataset_1..8, last 75 frames/sequence). Saves
+# results/baseline_threshold.json.
+./.venv/bin/python -m scripts.baseline_threshold
+
+# Fine-tunes a U-Net (ResNet34 encoder) on the train split
+# (instrument_dataset_1..8, first 225 frames/sequence). Saves
+# checkpoints/unet_resnet34.pt, results/train_log.csv, and qualitative
+# overlays in results/sanity_overlays/.
+./.venv/bin/python -m scripts.train_model
+```
+
+Both accept `--dataset-root` and other flags; run with `--help` to see
+them. The train/test split covers only `instrument_dataset_1..8`;
+`instrument_dataset_9` and `_10` are reserved as full 300-frame
+held-out sequences for a later stretch-goal evaluation.
+
 ## Code style
 
 - **Python**: [PEP 8](https://peps.python.org/pep-0008/). Formatted with

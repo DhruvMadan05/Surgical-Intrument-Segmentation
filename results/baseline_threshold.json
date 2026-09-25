@@ -1,6 +1,6 @@
 {
   "method": "otsu_saturation_threshold",
-  "mean_iou": 0.14120988077240645,
-  "mean_dice": 0.2404956834893385,
+  "mean_iou": 0.3340469268323464,
+  "mean_dice": 0.48272056761945653,
   "num_frames": 600
 }

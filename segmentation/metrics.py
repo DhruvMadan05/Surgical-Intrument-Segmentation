@@ -10,6 +10,8 @@ from typing import Callable, Dict, List, Tuple
 import numpy as np
 from PIL import Image
 
+from segmentation.crop import crop_camera_view
+
 
 def iou(pred_mask: np.ndarray, gt_mask: np.ndarray) -> float:
     """Intersection-over-union between two binary masks.
@@ -50,7 +52,7 @@ def evaluate_predictions(
         pairs: List of (frame_path, mask_path) tuples.
         predict_fn: Callable that takes a frame_path and returns a
             predicted binary mask, same (height, width) as the
-            ground-truth mask, values 0/1 or bool.
+            cropped ground-truth mask (1024x1280), values 0/1 or bool.
 
     Returns:
         A dict with mean_iou, mean_dice, per-frame IoU/Dice lists, and
@@ -59,7 +61,8 @@ def evaluate_predictions(
     ious = []
     dices = []
     for frame_path, mask_path in pairs:
-        gt_mask = np.array(Image.open(mask_path).convert("L")) > 127
+        gt_image = crop_camera_view(Image.open(mask_path).convert("L"))
+        gt_mask = np.array(gt_image) > 127
         pred_mask = predict_fn(frame_path)
         ious.append(iou(pred_mask, gt_mask))
         dices.append(dice(pred_mask, gt_mask))

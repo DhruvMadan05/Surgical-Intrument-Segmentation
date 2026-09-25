@@ -23,13 +23,17 @@ from PIL import Image
 from skimage.filters import threshold_otsu
 from skimage.morphology import binary_closing, binary_opening, disk
 
+from segmentation.crop import crop_camera_view
 from segmentation.dataset import train_test_split
 from segmentation.metrics import evaluate_predictions
 
 
 def predict_mask(frame_path: Path) -> np.ndarray:
-    """Segments an instrument mask via Otsu thresholding on saturation."""
-    image = np.array(Image.open(frame_path).convert("HSV"))
+    """Segments an instrument mask via Otsu thresholding on saturation.
+
+    Operates on the cropped 1280x1024 camera view only.
+    """
+    image = np.array(crop_camera_view(Image.open(frame_path).convert("HSV")))
     saturation = image[:, :, 1]
     thresh = threshold_otsu(saturation)
     mask = saturation < thresh  # low saturation -> instrument
@@ -51,8 +55,8 @@ def save_sanity_overlays(
     sampled = pairs[::step][:num_examples]
 
     for i, (frame_path, mask_path) in enumerate(sampled):
-        image = np.array(Image.open(frame_path).convert("RGB"))
-        gt = np.array(Image.open(mask_path).convert("L")) > 127
+        image = np.array(crop_camera_view(Image.open(frame_path)))
+        gt = np.array(crop_camera_view(Image.open(mask_path))) > 127
         pred = predict_mask(frame_path)
 
         fig, axes = plt.subplots(1, 3, figsize=(12, 4))

@@ -14,6 +14,8 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 
+from segmentation.crop import crop_camera_view
+
 IMAGENET_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
 IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
@@ -82,13 +84,15 @@ def train_test_split(
 
 
 def load_image(path: Path, size: Tuple[int, int]) -> np.ndarray:
-    """Loads an RGB image, resized to (width, height)."""
-    return np.array(Image.open(path).convert("RGB").resize(size))
+    """Loads an RGB frame, cropped to the camera view and resized."""
+    image = crop_camera_view(Image.open(path).convert("RGB"))
+    return np.array(image.resize(size))
 
 
 def load_mask(path: Path, size: Tuple[int, int]) -> np.ndarray:
-    """Loads a binary mask, resized to (width, height), as {0, 1}."""
-    mask = Image.open(path).convert("L").resize(size, Image.NEAREST)
+    """Loads a mask, cropped to the camera view and resized, as {0, 1}."""
+    mask = crop_camera_view(Image.open(path).convert("L"))
+    mask = mask.resize(size, Image.NEAREST)
     return (np.array(mask) > 127).astype(np.uint8)
 
 
@@ -96,8 +100,8 @@ class InstrumentSegDataset(Dataset):
     """Binary instrument segmentation dataset over (frame, mask) pairs."""
 
     # (width, height); divisible by 32 for the ResNet34 encoder's 5
-    # downsampling stages, close to the source frames' 16:9 aspect ratio.
-    DEFAULT_SIZE = (384, 224)
+    # downsampling stages, and the 5:4 aspect ratio of the cropped view.
+    DEFAULT_SIZE = (320, 256)
 
     def __init__(
         self,

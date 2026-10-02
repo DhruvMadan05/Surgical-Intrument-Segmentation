@@ -28,7 +28,7 @@ from segmentation.dataset import (
     IMAGENET_MEAN,
     IMAGENET_STD,
     InstrumentSegDataset,
-    train_test_split,
+    train_pairs,
 )
 
 
@@ -124,12 +124,12 @@ def main() -> None:
     device = get_device()
     print(f"Using device: {device}")
 
-    train_pairs, _ = train_test_split(args.dataset_root)
+    train_frame_pairs = train_pairs(args.dataset_root)
     if args.limit:
-        train_pairs = train_pairs[: args.limit]
-    print(f"Training on {len(train_pairs)} frames")
+        train_frame_pairs = train_frame_pairs[: args.limit]
+    print(f"Training on {len(train_frame_pairs)} frames")
 
-    dataset = InstrumentSegDataset(train_pairs)
+    dataset = InstrumentSegDataset(train_frame_pairs)
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
     model = smp.Unet(

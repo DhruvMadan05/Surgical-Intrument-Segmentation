@@ -4,6 +4,21 @@ Sequences instrument_dataset_1..8 are split per-frame-index (first 225
 frames train, last 75 test), following the standard EndoVis 2017
 protocol. Sequences 9 and 10 are held out entirely for the stretch-goal
 full-sequence evaluation and are not touched here.
+
+Train and test pairs come from different mask sources:
+  - Train frames are scored against our own self-computed binary_masks/
+    (scripts/make_binary_masks.py), since no official ground truth
+    exists for them.
+  - Test frames are scored against the official EndoVis 2017
+    BinarySegmentation masks (scripts/download_test_masks.py), so
+    results are comparable with published benchmarks that were also
+    scored against the official test masks. This matters: spot-checks
+    showed our self-computed masks agree with the official ones on
+    30/32 sampled frames, but diverge on a few frames in sequences 1-2
+    where the official release appears to omit a visible instrument
+    near the frame edge -- using the official masks for evaluation
+    keeps us consistent with how published numbers were produced, even
+    though our own masks are arguably more complete on those frames.
 """
 
 from pathlib import Path
@@ -26,12 +41,14 @@ TRAIN_SEQUENCES = range(1, 9)
 FramePair = Tuple[Path, Path]
 
 
-def list_frame_pairs(dataset_dir: Path) -> List[FramePair]:
-    """Pairs each left frame with its binary mask for one sequence.
+def list_frame_pairs(dataset_dir: Path, limit: int = None) -> List[FramePair]:
+    """Pairs left frames with self-computed binary masks for one sequence.
 
     Args:
         dataset_dir: Path to an instrument_dataset_N directory containing
             left_frames/ and binary_masks/ subdirectories.
+        limit: If given, only pair the first `limit` frames (by name),
+            so masks beyond that point don't need to exist.
 
     Returns:
         A list of (frame_path, mask_path) tuples, sorted by frame name.
@@ -41,8 +58,12 @@ def list_frame_pairs(dataset_dir: Path) -> List[FramePair]:
     """
     frames_dir = dataset_dir / "left_frames"
     masks_dir = dataset_dir / "binary_masks"
+    frame_paths = sorted(frames_dir.glob("frame*.png"))
+    if limit is not None:
+        frame_paths = frame_paths[:limit]
+
     pairs = []
-    for frame_path in sorted(frames_dir.glob("frame*.png")):
+    for frame_path in frame_paths:
         mask_path = masks_dir / frame_path.name
         if not mask_path.exists():
             raise FileNotFoundError(
@@ -53,34 +74,106 @@ def list_frame_pairs(dataset_dir: Path) -> List[FramePair]:
     return pairs
 
 
-def train_test_split(
-    dataset_root: Path, train_frames: int = 225
-) -> Tuple[List[FramePair], List[FramePair]]:
-    """Splits instrument_dataset_1..8 into train/test frame pairs.
+def official_mask_path(
+    test_root: Path, sequence: int, frame_name: str
+) -> Path:
+    """Resolves the official BinarySegmentation mask path for one frame.
 
-    Each sequence's own frames are split by index: the first
-    `train_frames` frames go to train, the remainder go to test. This
-    matches the standard EndoVis 2017 protocol. Sequences 9 and 10 are
-    not included.
+    instrument_dataset_1's test masks sit directly under
+    instrument_dataset_1/BinarySegmentation/, while every other sequence
+    nests them under .../ground_truth/BinarySegmentation/ -- the HF
+    mirror's folder layout is inconsistent between the two.
+    """
+    seq_dir = test_root / f"instrument_dataset_{sequence}"
+    direct = seq_dir / "BinarySegmentation" / frame_name
+    if direct.exists():
+        return direct
+    return seq_dir / "ground_truth" / "BinarySegmentation" / frame_name
+
+
+def train_pairs(
+    dataset_root: Path, train_frames: int = 225
+) -> List[FramePair]:
+    """Training pairs for instrument_dataset_1..8.
+
+    Uses each sequence's first `train_frames` frames, scored against our
+    self-computed binary_masks/.
 
     Args:
         dataset_root: Directory containing instrument_dataset_N folders
             (e.g. dataset/training).
-        train_frames: Number of leading frames per sequence used for
-            training; the rest are used for testing.
+        train_frames: Number of leading frames per sequence to use.
 
     Returns:
-        (train_pairs, test_pairs), each a flat list of (frame_path,
-        mask_path) tuples across all 8 sequences.
+        A flat list of (frame_path, mask_path) tuples across all 8
+        sequences.
     """
-    train_pairs: List[FramePair] = []
-    test_pairs: List[FramePair] = []
+    pairs: List[FramePair] = []
     for n in TRAIN_SEQUENCES:
         dataset_dir = dataset_root / f"instrument_dataset_{n}"
-        pairs = list_frame_pairs(dataset_dir)
-        train_pairs.extend(pairs[:train_frames])
-        test_pairs.extend(pairs[train_frames:])
-    return train_pairs, test_pairs
+        pairs.extend(list_frame_pairs(dataset_dir, limit=train_frames))
+    return pairs
+
+
+def test_pairs(
+    dataset_root: Path,
+    test_root: Path = None,
+    train_frames: int = 225,
+) -> List[FramePair]:
+    """Official test pairs for instrument_dataset_1..8.
+
+    Uses each sequence's frames from `train_frames` onward (the last 75
+    of each 300-frame sequence), scored against the official
+    BinarySegmentation masks downloaded by
+    scripts/download_test_masks.py. Frame images are read from
+    `dataset_root` rather than `test_root`, since the HF mirror's test/
+    images are byte-identical to the ones already under
+    dataset/training/ -- only test/'s ground truth is new.
+
+    Args:
+        dataset_root: Directory containing instrument_dataset_N folders
+            (e.g. dataset/training).
+        test_root: Directory containing the downloaded official test
+            masks (e.g. dataset/test). Defaults to a `test` sibling of
+            `dataset_root`.
+        train_frames: Number of leading frames per sequence reserved
+            for training; frames from this index onward are test.
+
+    Returns:
+        A flat list of (frame_path, mask_path) tuples across all 8
+        sequences.
+
+    Raises:
+        FileNotFoundError: If an official test mask is missing.
+    """
+    if test_root is None:
+        test_root = dataset_root.parent / "test"
+
+    pairs: List[FramePair] = []
+    for n in TRAIN_SEQUENCES:
+        frames_dir = dataset_root / f"instrument_dataset_{n}" / "left_frames"
+        frame_paths = sorted(frames_dir.glob("frame*.png"))[train_frames:]
+        for frame_path in frame_paths:
+            mask_path = official_mask_path(test_root, n, frame_path.name)
+            if not mask_path.exists():
+                raise FileNotFoundError(
+                    f"Missing official test mask for {frame_path}; run "
+                    "scripts/download_test_masks.py first."
+                )
+            pairs.append((frame_path, mask_path))
+    return pairs
+
+
+def train_test_split(
+    dataset_root: Path,
+    test_root: Path = None,
+    train_frames: int = 225,
+) -> Tuple[List[FramePair], List[FramePair]]:
+    """Convenience wrapper combining train_pairs() and test_pairs()."""
+    return (
+        train_pairs(dataset_root, train_frames),
+        test_pairs(dataset_root, test_root, train_frames),
+    )
 
 
 def load_image(path: Path, size: Tuple[int, int]) -> np.ndarray:

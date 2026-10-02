@@ -6,18 +6,18 @@ them better than plain grayscale intensity. Otsu's method picks the
 threshold automatically per frame; a small morphological open/close
 cleans up salt-and-pepper noise from specular highlights.
 
-Evaluates this baseline on the standard EndoVis 2017 test split
-(instrument_dataset_1..8, last 75 frames per sequence) using IoU and
-Dice, and saves results to results/baseline_threshold.json so the
-fine-tuned model can be benchmarked against it later.
+Evaluates this baseline on the official EndoVis 2017 test split
+(instrument_dataset_1..8, last 75 frames per sequence, scored against
+the downloaded official BinarySegmentation masks -- see
+scripts/download_test_masks.py) using IoU and Dice, and saves results
+to results/baseline_threshold.json so the fine-tuned model can be
+benchmarked against it later on the same masks.
 """
 
 import argparse
 import json
 from pathlib import Path
-from typing import List, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 from skimage.filters import threshold_otsu
@@ -26,6 +26,7 @@ from skimage.morphology import binary_closing, binary_opening, disk
 from segmentation.crop import crop_camera_view
 from segmentation.dataset import train_test_split
 from segmentation.metrics import evaluate_predictions
+from segmentation.visualize import save_prediction_overlays
 
 
 def predict_mask(frame_path: Path) -> np.ndarray:
@@ -42,37 +43,6 @@ def predict_mask(frame_path: Path) -> np.ndarray:
     return mask
 
 
-def save_sanity_overlays(
-    pairs: List[Tuple[Path, Path]], out_dir: Path, num_examples: int = 6
-) -> None:
-    """Saves input/ground-truth/prediction overlays for a few frames.
-
-    Samples evenly across `pairs` (rather than taking the first N) so
-    the examples aren't all drawn from a single sequence.
-    """
-    out_dir.mkdir(parents=True, exist_ok=True)
-    step = max(1, len(pairs) // num_examples)
-    sampled = pairs[::step][:num_examples]
-
-    for i, (frame_path, mask_path) in enumerate(sampled):
-        image = np.array(crop_camera_view(Image.open(frame_path)))
-        gt = np.array(crop_camera_view(Image.open(mask_path))) > 127
-        pred = predict_mask(frame_path)
-
-        fig, axes = plt.subplots(1, 3, figsize=(12, 4))
-        axes[0].imshow(image)
-        axes[0].set_title("input")
-        axes[1].imshow(gt, cmap="gray")
-        axes[1].set_title("ground truth")
-        axes[2].imshow(pred, cmap="gray")
-        axes[2].set_title("prediction")
-        for ax in axes:
-            ax.axis("off")
-        fig.tight_layout()
-        fig.savefig(out_dir / f"test_frame_{i}.png")
-        plt.close(fig)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     repo_root = Path(__file__).resolve().parent.parent
@@ -81,6 +51,15 @@ def main() -> None:
         type=Path,
         default=repo_root / "dataset" / "training",
         help="Directory containing instrument_dataset_N folders",
+    )
+    parser.add_argument(
+        "--test-root",
+        type=Path,
+        default=None,
+        help=(
+            "Directory with official test masks (default: a 'test' "
+            "sibling of --dataset-root)"
+        ),
     )
     parser.add_argument(
         "--limit",
@@ -102,11 +81,11 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    _, test_pairs = train_test_split(args.dataset_root)
+    _, test_frame_pairs = train_test_split(args.dataset_root, args.test_root)
     if args.limit:
-        test_pairs = test_pairs[: args.limit]
+        test_frame_pairs = test_frame_pairs[: args.limit]
 
-    results = evaluate_predictions(test_pairs, predict_mask)
+    results = evaluate_predictions(test_frame_pairs, predict_mask)
     print(
         f"Evaluated {results['num_frames']} test frames: "
         f"mean IoU={results['mean_iou']:.4f}, "
@@ -127,7 +106,7 @@ def main() -> None:
         )
     print(f"Saved results to {args.out}")
 
-    save_sanity_overlays(test_pairs, args.overlays_dir)
+    save_prediction_overlays(test_frame_pairs, predict_mask, args.overlays_dir)
     print(f"Saved sanity overlays to {args.overlays_dir}")
 
 

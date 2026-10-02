@@ -22,6 +22,17 @@ mask has a nonzero pixel) alongside each `instrument_dataset_N/`:
 ./.venv/bin/python scripts/make_binary_masks.py
 ```
 
+Optionally, pull down the official EndoVis 2017 test-split binary masks
+too (`dataset/test/`), useful as a cross-check against
+`make_binary_masks.py`'s output. The HF mirror's `training/` frames
+already cover all 300 frames per sequence, byte-identical to
+`test/left_frames`/`right_frames`, so this only fetches the ~40 MB of
+pre-merged ground truth, not the ~4.2 GB of duplicate images:
+
+```bash
+./.venv/bin/python scripts/download_test_masks.py
+```
+
 ## Baseline & model training
 
 Both scripts below use the shared `segmentation/` package (train/test

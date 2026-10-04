@@ -119,6 +119,27 @@ def main() -> None:
         type=Path,
         default=repo_root / "results" / "sanity_overlays",
     )
+    parser.add_argument(
+        "--resume",
+        type=Path,
+        default=None,
+        help=(
+            "Checkpoint to load weights from before training, so a run "
+            "interrupted partway through can continue instead of "
+            "restarting from scratch"
+        ),
+    )
+    parser.add_argument(
+        "--start-epoch",
+        type=int,
+        default=1,
+        help=(
+            "Epoch number to resume at (e.g. 13 after an interrupted "
+            "run that logged through epoch 12). Training runs through "
+            "--epochs inclusive. The log is appended to, not "
+            "overwritten, when this is > 1."
+        ),
+    )
     args = parser.parse_args()
 
     device = get_device()
@@ -134,20 +155,26 @@ def main() -> None:
 
     model = smp.Unet(
         encoder_name="resnet34",
-        encoder_weights="imagenet",
+        encoder_weights="imagenet" if args.resume is None else None,
         in_channels=3,
         classes=1,
         activation=None,
     ).to(device)
+    if args.resume is not None:
+        print(f"Resuming weights from {args.resume}")
+        model.load_state_dict(torch.load(args.resume, map_location=device))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     args.log.parent.mkdir(parents=True, exist_ok=True)
-    with open(args.log, "w", newline="") as log_file:
+    args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
+    log_mode = "a" if args.start_epoch > 1 else "w"
+    with open(args.log, log_mode, newline="") as log_file:
         writer = csv.writer(log_file)
-        writer.writerow(["epoch", "mean_loss"])
+        if args.start_epoch == 1:
+            writer.writerow(["epoch", "mean_loss"])
 
-        for epoch in range(1, args.epochs + 1):
+        for epoch in range(args.start_epoch, args.epochs + 1):
             model.train()
             epoch_losses = []
             for images, masks in loader:
@@ -169,8 +196,11 @@ def main() -> None:
             writer.writerow([epoch, mean_loss])
             log_file.flush()
 
-    args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(model.state_dict(), args.checkpoint)
+            # Saved every epoch (not just at the end) so an interrupted
+            # run can resume from the last completed epoch instead of
+            # losing all progress.
+            torch.save(model.state_dict(), args.checkpoint)
+
     print(f"Saved checkpoint to {args.checkpoint}")
 
     save_sanity_overlays(model, dataset, device, args.overlays_dir)

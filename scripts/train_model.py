@@ -16,6 +16,7 @@ producing masks on training data.
 
 import argparse
 import csv
+import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -23,6 +24,7 @@ import numpy as np
 import segmentation_models_pytorch as smp
 import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from segmentation.dataset import (
     IMAGENET_MEAN,
@@ -177,7 +179,15 @@ def main() -> None:
         for epoch in range(args.start_epoch, args.epochs + 1):
             model.train()
             epoch_losses = []
-            for images, masks in loader:
+            epoch_start = time.time()
+
+            progress = tqdm(
+                loader,
+                desc=f"Epoch {epoch}/{args.epochs}",
+                unit="batch",
+                leave=False,
+            )
+            for images, masks in progress:
                 images = images.to(device)
                 masks = masks.to(device)
 
@@ -187,11 +197,13 @@ def main() -> None:
                 loss.backward()
                 optimizer.step()
                 epoch_losses.append(loss.item())
+                progress.set_postfix(loss=f"{loss.item():.4f}")
 
             mean_loss = float(np.mean(epoch_losses))
+            elapsed = time.time() - epoch_start
             print(
                 f"Epoch {epoch}/{args.epochs}: mean dice loss "
-                f"= {mean_loss:.4f}"
+                f"= {mean_loss:.4f} ({elapsed:.1f}s)"
             )
             writer.writerow([epoch, mean_loss])
             log_file.flush()

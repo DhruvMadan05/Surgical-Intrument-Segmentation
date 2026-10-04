@@ -1,10 +1,14 @@
 """Evaluates a trained checkpoint on the official EndoVis 2017 test split.
 
-Loads a U-Net checkpoint (see scripts/train_model.py) and runs it on the
-test-split frames (instrument_dataset_1..8, last 75 frames per
-sequence), scored against the official BinarySegmentation masks (see
-scripts/download_test_masks.py) using the same segmentation.metrics
-code as the classical baseline, so the two are directly comparable.
+Loads a U-Net checkpoint (see scripts/train_model.py) and runs it
+separately on each of the 10 sequences' official test frames
+(instrument_dataset_1..8: last 75 frames per sequence; 9..10: all 300
+frames each, since they have no training portion at all -- a stronger
+generalization check), scored against the official BinarySegmentation
+masks (see scripts/download_test_masks.py) using the same
+segmentation.metrics code as the classical baseline, so the two are
+directly comparable. Reports a per-sequence breakdown plus an overall
+mean across all 10 sequences.
 """
 
 import argparse
@@ -21,8 +25,8 @@ from segmentation.dataset import (
     IMAGENET_MEAN,
     IMAGENET_STD,
     InstrumentSegDataset,
+    all_sequences_test_pairs,
 )
-from segmentation.dataset import test_pairs as load_test_pairs
 from segmentation.metrics import evaluate_predictions
 from segmentation.visualize import save_prediction_overlays
 
@@ -106,7 +110,10 @@ def main() -> None:
         "--limit",
         type=int,
         default=None,
-        help="Evaluate only the first N test frames (quick sanity check)",
+        help=(
+            "Evaluate only the first N frames per sequence "
+            "(quick sanity check)"
+        ),
     )
     parser.add_argument(
         "--out",
@@ -123,21 +130,52 @@ def main() -> None:
     device = get_device()
     print(f"Using device: {device}")
 
-    pairs = load_test_pairs(args.dataset_root, args.test_root)
+    pairs_by_sequence = all_sequences_test_pairs(
+        args.dataset_root, args.test_root
+    )
     if args.limit:
-        pairs = pairs[: args.limit]
-    print(f"Evaluating on {len(pairs)} test frames")
+        pairs_by_sequence = {
+            n: pairs[: args.limit] for n, pairs in pairs_by_sequence.items()
+        }
 
     model = load_model(args.checkpoint, device)
     predict_fn = make_predict_fn(
         model, device, InstrumentSegDataset.DEFAULT_SIZE
     )
 
-    results = evaluate_predictions(pairs, predict_fn)
+    per_sequence = {}
+    all_pairs = []
+    for n in sorted(pairs_by_sequence):
+        pairs = pairs_by_sequence[n]
+        all_pairs.extend(pairs)
+        results = evaluate_predictions(pairs, predict_fn)
+        per_sequence[n] = results
+        print(
+            f"instrument_dataset_{n}: {results['num_frames']} frames, "
+            f"IoU={results['mean_iou']:.4f}, "
+            f"Dice={results['mean_dice']:.4f}"
+        )
+
+    # Two ways to summarize "overall": averaging the 10 per-sequence
+    # means weights every sequence equally regardless of frame count;
+    # pooling scores every one of the 1200 frames once and averages
+    # those directly. Both are reported since they can diverge when
+    # frame counts differ as much as they do here (75 vs. 300).
+    mean_of_sequences_iou = float(
+        np.mean([r["mean_iou"] for r in per_sequence.values()])
+    )
+    mean_of_sequences_dice = float(
+        np.mean([r["mean_dice"] for r in per_sequence.values()])
+    )
+    pooled = evaluate_predictions(all_pairs, predict_fn)
     print(
-        f"Evaluated {results['num_frames']} test frames: "
-        f"mean IoU={results['mean_iou']:.4f}, "
-        f"mean Dice={results['mean_dice']:.4f}"
+        f"\nOverall (mean of 10 sequence means): "
+        f"IoU={mean_of_sequences_iou:.4f}, "
+        f"Dice={mean_of_sequences_dice:.4f}"
+    )
+    print(
+        f"Overall (pooled across all {pooled['num_frames']} frames): "
+        f"IoU={pooled['mean_iou']:.4f}, Dice={pooled['mean_dice']:.4f}"
     )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -146,16 +184,30 @@ def main() -> None:
             {
                 "method": "unet_resnet34",
                 "checkpoint": str(args.checkpoint),
-                "mean_iou": results["mean_iou"],
-                "mean_dice": results["mean_dice"],
-                "num_frames": results["num_frames"],
+                "per_sequence": {
+                    str(n): {
+                        "mean_iou": r["mean_iou"],
+                        "mean_dice": r["mean_dice"],
+                        "num_frames": r["num_frames"],
+                    }
+                    for n, r in per_sequence.items()
+                },
+                "overall_mean_of_sequences": {
+                    "mean_iou": mean_of_sequences_iou,
+                    "mean_dice": mean_of_sequences_dice,
+                },
+                "overall_pooled": {
+                    "mean_iou": pooled["mean_iou"],
+                    "mean_dice": pooled["mean_dice"],
+                    "num_frames": pooled["num_frames"],
+                },
             },
             f,
             indent=2,
         )
-    print(f"Saved results to {args.out}")
+    print(f"\nSaved results to {args.out}")
 
-    save_prediction_overlays(pairs, predict_fn, args.overlays_dir)
+    save_prediction_overlays(all_pairs, predict_fn, args.overlays_dir)
     print(f"Saved overlays to {args.overlays_dir}")
 
 

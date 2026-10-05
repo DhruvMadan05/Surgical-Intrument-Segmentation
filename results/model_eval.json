@@ -3,63 +3,63 @@
   "checkpoint": "/Users/dhruvmadan/src/classes/RBE544/instrument_segmentation/checkpoints/unet_resnet34.pt",
   "per_sequence": {
     "1": {
-      "mean_iou": 0.617978963053407,
-      "mean_dice": 0.7461171189438547,
+      "mean_iou": 0.8869746617521658,
+      "mean_dice": 0.939906905457208,
       "num_frames": 75
     },
     "2": {
-      "mean_iou": 0.7185804388730134,
-      "mean_dice": 0.8144346730621157,
+      "mean_iou": 0.8373935966785158,
+      "mean_dice": 0.9066023261530468,
       "num_frames": 75
     },
     "3": {
-      "mean_iou": 0.9441794229539675,
-      "mean_dice": 0.971146930404001,
+      "mean_iou": 0.9441028268873654,
+      "mean_dice": 0.9710952275205655,
       "num_frames": 75
     },
     "4": {
-      "mean_iou": 0.9488379390158106,
-      "mean_dice": 0.9737351116856824,
+      "mean_iou": 0.9492350912470855,
+      "mean_dice": 0.9739459605431201,
       "num_frames": 75
     },
     "5": {
-      "mean_iou": 0.8984757049432333,
-      "mean_dice": 0.9455327992097241,
+      "mean_iou": 0.8897880526559133,
+      "mean_dice": 0.9381111694949148,
       "num_frames": 75
     },
     "6": {
-      "mean_iou": 0.9086966162712625,
-      "mean_dice": 0.9503161069446728,
+      "mean_iou": 0.9163409854666101,
+      "mean_dice": 0.9545448521653772,
       "num_frames": 75
     },
     "7": {
-      "mean_iou": 0.7547465127442605,
-      "mean_dice": 0.8341017555132884,
+      "mean_iou": 0.800547018643346,
+      "mean_dice": 0.8656387030592582,
       "num_frames": 75
     },
     "8": {
-      "mean_iou": 0.9474536115711106,
-      "mean_dice": 0.9729498365875506,
+      "mean_iou": 0.9470415743722597,
+      "mean_dice": 0.9727507759869863,
       "num_frames": 75
     },
     "9": {
-      "mean_iou": 0.8835394242922795,
-      "mean_dice": 0.9366428411693258,
+      "mean_iou": 0.8838446800214325,
+      "mean_dice": 0.9371445591107255,
       "num_frames": 300
     },
     "10": {
-      "mean_iou": 0.9192356497899619,
-      "mean_dice": 0.9569937137429195,
+      "mean_iou": 0.9239577559428366,
+      "mean_dice": 0.9596582517187376,
       "num_frames": 300
     }
   },
   "overall_mean_of_sequences": {
-    "mean_iou": 0.8541724283508307,
-    "mean_dice": 0.9101970887263136
+    "mean_iou": 0.8979226243667531,
+    "mean_dice": 0.941939873120994
   },
   "overall_pooled": {
-    "mean_iou": 0.8718780941096895,
-    "mean_dice": 0.923930034499992,
+    "mean_iou": 0.9001645969725212,
+    "mean_dice": 0.9443629477311456,
     "num_frames": 1200
   }
 }

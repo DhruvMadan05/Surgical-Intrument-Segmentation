@@ -1,6 +1,64 @@
 {
   "method": "otsu_saturation_threshold",
-  "mean_iou": 0.3340469268323464,
-  "mean_dice": 0.48272056761945653,
-  "num_frames": 600
+  "per_sequence": {
+    "1": {
+      "mean_iou": 0.2191352045826453,
+      "mean_dice": 0.3552812280827703,
+      "num_frames": 75
+    },
+    "2": {
+      "mean_iou": 0.24324293680480666,
+      "mean_dice": 0.3857921401397234,
+      "num_frames": 75
+    },
+    "3": {
+      "mean_iou": 0.36966176011078716,
+      "mean_dice": 0.5208742851922422,
+      "num_frames": 75
+    },
+    "4": {
+      "mean_iou": 0.5016471420865295,
+      "mean_dice": 0.6659529575620595,
+      "num_frames": 75
+    },
+    "5": {
+      "mean_iou": 0.1885338892260429,
+      "mean_dice": 0.3061768668197999,
+      "num_frames": 75
+    },
+    "6": {
+      "mean_iou": 0.3887976249077956,
+      "mean_dice": 0.5501329791386786,
+      "num_frames": 75
+    },
+    "7": {
+      "mean_iou": 0.37686182762766196,
+      "mean_dice": 0.526539505531834,
+      "num_frames": 75
+    },
+    "8": {
+      "mean_iou": 0.4008438536054433,
+      "mean_dice": 0.5656278968639891,
+      "num_frames": 75
+    },
+    "9": {
+      "mean_iou": 0.2893118534379784,
+      "mean_dice": 0.43240938709466026,
+      "num_frames": 300
+    },
+    "10": {
+      "mean_iou": 0.33692663878961177,
+      "mean_dice": 0.48894939114350316,
+      "num_frames": 300
+    }
+  },
+  "overall_mean_of_sequences": {
+    "mean_iou": 0.3314962731179303,
+    "mean_dice": 0.4797736637569261
+  },
+  "overall_pooled": {
+    "mean_iou": 0.3246048879913796,
+    "mean_dice": 0.47261331076773444,
+    "num_frames": 1200
+  }
 }

@@ -1,0 +1,11 @@
+Dataset,Our IoU,Best team,vs best,Mean of 10 teams,vs mean,Our rank,Like-for-like?
+1,0.887,MIT 0.854,+0.033,0.589,+0.298,1 of 11,no (trained on same video); masks replaced
+2,0.837,UB 0.806,+0.031,0.606,+0.231,1 of 11,no (trained on same video); masks replaced
+3,0.944,MIT 0.949,-0.005,0.788,+0.156,2 of 11,no (trained on same video)
+4,0.949,MIT 0.949,+0.000,0.803,+0.146,1 of 11,no (trained on same video)
+5,0.890,MIT 0.862,+0.028,0.578,+0.312,1 of 11,no (trained on same video)
+6,0.916,MIT 0.922,-0.006,0.717,+0.199,2 of 11,no (trained on same video)
+7,0.801,UB 0.930,-0.129,0.670,+0.130,6 of 11,no (trained on same video)
+8,0.947,MIT 0.937,+0.010,0.688,+0.259,1 of 11,no (trained on same video)
+9,0.884,TUM 0.877,+0.007,0.681,+0.203,1 of 11,yes
+10,0.924,UB 0.917,+0.007,0.781,+0.143,1 of 11,yes

@@ -46,12 +46,26 @@ def write_tables(
     rows: List[Sequence[str]],
     markdown_path: Path,
     csv_path: Path,
+    left_aligned: Sequence[int] = (0,),
 ) -> None:
-    """Writes the same table as a GitHub-flavored Markdown file and a CSV."""
+    """Writes the same table as a GitHub-flavored Markdown file and a CSV.
+
+    Args:
+        headers: Column titles.
+        rows: Table body; each row has one cell per header.
+        markdown_path: Where to write the Markdown table.
+        csv_path: Where to write the CSV copy.
+        left_aligned: Indices of text columns to left-align in Markdown;
+            all other columns are right-aligned (numeric).
+    """
     markdown_path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         "| " + " | ".join(headers) + " |",
-        "|" + "|".join(["---"] + ["---:"] * (len(headers) - 1)) + "|",
+        "|"
+        + "|".join(
+            "---" if i in left_aligned else "---:" for i in range(len(headers))
+        )
+        + "|",
     ]
     lines += ["| " + " | ".join(str(c) for c in row) + " |" for row in rows]
     markdown_path.write_text("\n".join(lines) + "\n")

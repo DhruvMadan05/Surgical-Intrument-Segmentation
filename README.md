@@ -32,8 +32,34 @@ the training frames in the same video, so they show nearly the same scene,
 lighting and instruments. Sequences 9 and 10 are entirely new videos, so
 they are the real test of generalization.
 
+### Speed
+
+Time to turn one frame into a full-resolution (1280x1024) mask, averaged
+over 100 evenly spaced test frames after warmup, on an Apple M2 (8 CPU
+cores, Metal GPU). Rate (Hz) is 1 / mean latency.
+
+| Method | Mean latency (ms/frame) | Rate (Hz) |
+|---|---:|---:|
+| Otsu baseline (CPU) | 99.1 | 10.1 |
+| U-Net (CPU) | 95.3 | 10.5 |
+| U-Net (Apple GPU) | 46.1 | 21.7 |
+| *U-Net forward pass only (Apple GPU)* | *20.0* | *50.0* |
+
+"Latency" is end to end: decode the 1920x1080 PNG, crop, resize,
+(network or threshold), and upsample to the full-resolution mask. The
+last row times only the network's forward pass, so the gap to the row
+above it is image I/O and pre/post-processing. On CPU the U-Net is about
+as fast as the baseline while being far more accurate. The baseline is
+CPU-only and single-threaded, so the CPU U-Net row is the like-for-like
+comparison; the GPU row shows the speed available with an accelerator.
+See [`results/tables/speed_benchmark.md`](results/tables/speed_benchmark.md)
+for std, median and p95.
+
+![Speed benchmark](results/figures/speed_benchmark.png)
+
 Full tables: [`results/tables/`](results/tables/)
-(`baseline_vs_model`, `challenge_per_dataset`, `challenge_leaderboard`).
+(`baseline_vs_model`, `challenge_per_dataset`, `challenge_leaderboard`,
+`speed_benchmark`).
 
 ## Repository layout
 
@@ -41,6 +67,7 @@ Full tables: [`results/tables/`](results/tables/)
 segmentation/            Importable library code shared by all scripts
   paths.py                 Default file locations (dataset, results, ...)
   crop.py                  1920x1080 frame -> 1280x1024 camera view
+  baseline.py              Otsu-threshold baseline predictor
   dataset.py               Train/test split and PyTorch Dataset
   metrics.py               IoU / Dice, per-sequence evaluation, JSON output
   model.py                 U-Net builder, device selection, inference
@@ -54,7 +81,7 @@ scripts/
   analysis/                Plots and comparison tables from saved results
 reference/                 Numbers transcribed from the challenge paper
 results/
-  metrics/                 Evaluation JSON (baseline_threshold, model_eval)
+  metrics/                 Evaluation + speed JSON (baseline_threshold, model_eval, speed_benchmark)
   logs/                    Training loss log (train_log.csv)
   overlays/                Qualitative prediction images
   figures/                 Plots (PNG)
@@ -122,12 +149,25 @@ python3 -m scripts.evaluation.evaluate_model
 
 Both score each of the 10 sequences separately against the official test masks (sequences 1-8: last 75 frames; 9-10: all 300) and report a per-sequence breakdown plus overall means. Use `--limit N` for a quick test on N frames per sequence.
 
+Then time both methods (per-frame latency and rate in Hz):
+
+```bash
+# -> results/metrics/speed_benchmark.json
+python3 -m scripts.evaluation.benchmark_speed
+```
+
+It times the baseline (CPU) and the U-Net on every available device (CPU,
+plus Apple GPU / CUDA if present) on 100 test frames after 10 untimed
+warmup calls (`--num-frames`, `--warmup`). Close other heavy programs
+while it runs; timings vary a few percent between runs.
+
 ### 4. Make the graphs and tables
 
 ```bash
 python3 -m scripts.analysis.plot_training_loss
 python3 -m scripts.analysis.compare_baseline_vs_model
 python3 -m scripts.analysis.compare_to_challenge
+python3 -m scripts.analysis.plot_speed_benchmark
 ```
 
 ## What each script does
@@ -140,9 +180,11 @@ python3 -m scripts.analysis.compare_to_challenge
 | `training/train_model.py` | Train the U-Net | checkpoint, `logs/train_log.csv`, `overlays/sanity_train/` |
 | `evaluation/baseline_threshold.py` | Otsu saturation-threshold baseline | `metrics/baseline_threshold.json`, `overlays/baseline/` |
 | `evaluation/evaluate_model.py` | Evaluate a trained checkpoint | `metrics/model_eval.json`, `overlays/model/` |
+| `evaluation/benchmark_speed.py` | Time per-frame latency and rate (Hz) of baseline and U-Net | `metrics/speed_benchmark.json` |
 | `analysis/plot_training_loss.py` | Plot loss per epoch | `figures/training_loss.png` |
 | `analysis/compare_baseline_vs_model.py` | Baseline vs U-Net per sequence | `figures/baseline_vs_model.png`, `tables/baseline_vs_model.*` |
 | `analysis/compare_to_challenge.py` | Compare to the 10 challenge teams (best, mean, rank) | `figures/challenge_*.png`, `tables/challenge_*.*` |
+| `analysis/plot_speed_benchmark.py` | Table and chart of the speed results | `figures/speed_benchmark.png`, `tables/speed_benchmark.*` |
 
 ## Method notes
 
@@ -154,6 +196,13 @@ python3 -m scripts.analysis.compare_to_challenge
   morphological open/close.
 - **Model.** `segmentation_models_pytorch` U-Net with an ImageNet-pretrained
   ResNet34 encoder, run at 320x256, trained with soft-Dice loss and Adam (lr 1e-4, batch 8). Predictions are upsampled to the native 1280x1024 crop for scoring.
+- **Speed.** Each frame is timed individually with `time.perf_counter()`
+  after untimed warmup (first GPU calls compile kernels), with the device
+  synchronized before the clock stops (GPU work is asynchronous) and frame
+  files pre-read so disk-cache state doesn't skew results. Rate in Hz is
+  1 / mean latency, the sustained throughput when frames are processed
+  back to back. Results are specific to the machine in
+  `results/metrics/speed_benchmark.json`.
 - **Challenge reference.** `reference/endovis2017_binary_results.json` is Table I of the paper, checked against the paper's own mean column, frame-weighted overall row and win counts.
 
 ## Code style

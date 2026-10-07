@@ -15,8 +15,11 @@ rest), mirroring the HF repo's own structure.
 """
 
 import argparse
+from pathlib import Path
 
 from huggingface_hub import snapshot_download
+
+from segmentation import paths
 
 REPO_ID = "maxhallan7/robotic-instrument-segmentation-miccai-2017"
 
@@ -25,7 +28,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--local-dir",
-        default="dataset",
+        type=Path,
+        default=paths.REPO_ROOT / "dataset",
         help="Directory to download into (default: dataset/)",
     )
     args = parser.parse_args()

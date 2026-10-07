@@ -3,7 +3,7 @@
 Spot-checks (see segmentation/dataset.py's module docstring) found that
 the official BinarySegmentation test masks for instrument_dataset_1 and
 instrument_dataset_2 omit a real, visible instrument on some frames --
-our self-computed binary_masks/ (scripts/make_binary_masks.py) always
+our self-computed binary_masks/ (scripts/data_prep/make_binary_masks.py) always
 agreed with or exceeded the official masks, never fell short of them,
 confirming it's an omission in the official release rather than an
 error in our merge logic.
@@ -15,7 +15,7 @@ self-computed equivalents. Originals are backed up first to a sibling
 *_official_backup/ directory so the change is reversible and the
 discrepancy stays inspectable.
 
-Re-running scripts/download_test_masks.py later would re-fetch the
+Re-running scripts/data_prep/download_test_masks.py later would re-fetch the
 original (mislabeled) files from HuggingFace and silently undo this,
 so re-run this script afterward if that happens.
 """
@@ -24,6 +24,7 @@ import argparse
 import shutil
 from pathlib import Path
 
+from segmentation import paths
 from segmentation.dataset import official_mask_dir, test_frame_names
 
 FIXED_SEQUENCES = (1, 2)
@@ -56,7 +57,7 @@ def fix_sequence(dataset_root: Path, test_root: Path, sequence: int) -> int:
         if not source.exists():
             raise FileNotFoundError(
                 f"Missing self-computed mask {source}; run "
-                "scripts/make_binary_masks.py first."
+                "scripts/data_prep/make_binary_masks.py first."
             )
 
         official = mask_dir / name
@@ -72,17 +73,10 @@ def fix_sequence(dataset_root: Path, test_root: Path, sequence: int) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    repo_root = Path(__file__).resolve().parent.parent
     parser.add_argument(
-        "--dataset-root",
-        type=Path,
-        default=repo_root / "dataset" / "training",
+        "--dataset-root", type=Path, default=paths.DATASET_ROOT
     )
-    parser.add_argument(
-        "--test-root",
-        type=Path,
-        default=repo_root / "dataset" / "test",
-    )
+    parser.add_argument("--test-root", type=Path, default=paths.TEST_ROOT)
     args = parser.parse_args()
 
     for n in FIXED_SEQUENCES:

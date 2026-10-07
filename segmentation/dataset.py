@@ -2,7 +2,7 @@
 
 The test set for each sequence is whatever frame names are actually
 present in the downloaded official test masks (dataset/test/, see
-scripts/download_test_masks.py) -- not an assumed index cutoff. For
+scripts/data_prep/download_test_masks.py) -- not an assumed index cutoff. For
 instrument_dataset_1..8 that happens to be frame225-frame299 (75
 frames) and for 9/10 it's frame000-frame299 (all 300), verified against
 the real files, but the split is derived from the files themselves so
@@ -13,10 +13,10 @@ out entirely as a stronger generalization check.
 
 Train and test pairs come from different mask sources:
   - Train frames are scored against our own self-computed binary_masks/
-    (scripts/make_binary_masks.py), since no official ground truth
+    (scripts/data_prep/make_binary_masks.py), since no official ground truth
     exists for them.
   - Test frames are scored against the official EndoVis 2017
-    BinarySegmentation masks (scripts/download_test_masks.py), so
+    BinarySegmentation masks (scripts/data_prep/download_test_masks.py), so
     results are comparable with published benchmarks that were also
     scored against the official test masks. This matters: spot-checks
     showed our self-computed masks agree with the official ones on
@@ -28,7 +28,7 @@ Train and test pairs come from different mask sources:
 """
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -95,12 +95,14 @@ def test_frame_names(test_root: Path, sequence: int) -> List[str]:
         raise FileNotFoundError(
             f"Missing official test masks for instrument_dataset_"
             f"{sequence} at {mask_dir}; run "
-            "scripts/download_test_masks.py first."
+            "scripts/data_prep/download_test_masks.py first."
         )
     return sorted(p.name for p in mask_dir.glob("frame*.png"))
 
 
-def train_pairs(dataset_root: Path, test_root: Path = None) -> List[FramePair]:
+def train_pairs(
+    dataset_root: Path, test_root: Optional[Path] = None
+) -> List[FramePair]:
     """Training pairs for instrument_dataset_1..8.
 
     Uses every frame in each sequence NOT present in that sequence's
@@ -141,13 +143,15 @@ def train_pairs(dataset_root: Path, test_root: Path = None) -> List[FramePair]:
             if not mask_path.exists():
                 raise FileNotFoundError(
                     f"Missing binary mask for {frame_path}; run "
-                    "scripts/make_binary_masks.py first."
+                    "scripts/data_prep/make_binary_masks.py first."
                 )
             pairs.append((frame_path, mask_path))
     return pairs
 
 
-def test_pairs(dataset_root: Path, test_root: Path = None) -> List[FramePair]:
+def test_pairs(
+    dataset_root: Path, test_root: Optional[Path] = None
+) -> List[FramePair]:
     """Official test pairs for instrument_dataset_1..8.
 
     Uses exactly the frame names present in each sequence's official
@@ -182,7 +186,7 @@ def test_pairs(dataset_root: Path, test_root: Path = None) -> List[FramePair]:
 
 
 def all_sequences_test_pairs(
-    dataset_root: Path, test_root: Path = None
+    dataset_root: Path, test_root: Optional[Path] = None
 ) -> Dict[int, List[FramePair]]:
     """Official test pairs for all 10 sequences, grouped by sequence.
 
@@ -243,7 +247,7 @@ def _sequence_test_pairs(
 
 
 def train_test_split(
-    dataset_root: Path, test_root: Path = None
+    dataset_root: Path, test_root: Optional[Path] = None
 ) -> Tuple[List[FramePair], List[FramePair]]:
     """Convenience wrapper combining train_pairs() and test_pairs()."""
     return (

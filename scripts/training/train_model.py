@@ -8,10 +8,10 @@ checkpoint, a per-epoch loss log, and qualitative sanity-check overlays
 on a handful of training frames so it's visually obvious whether the
 model learned something, not just that the loss went down.
 
-Full test-set IoU/Dice evaluation (to compare against the classical
-baseline in results/baseline_threshold.json) is left to a follow-up
-evaluate.py script; this script's job is to get the model fine-tuned and
-producing masks on training data.
+Full test-set IoU/Dice evaluation is done separately by
+scripts/evaluation/evaluate_model.py; this script's job is to get the
+model fine-tuned and producing masks on training data. Plot the loss
+log it writes with scripts/analysis/plot_training_loss.py.
 """
 
 import argparse
@@ -21,24 +21,18 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import segmentation_models_pytorch as smp
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from segmentation import paths
 from segmentation.dataset import (
     IMAGENET_MEAN,
     IMAGENET_STD,
     InstrumentSegDataset,
     train_pairs,
 )
-
-
-def get_device() -> torch.device:
-    """Selects MPS (Apple Silicon GPU) if available, else CPU."""
-    if torch.backends.mps.is_available():
-        return torch.device("mps")
-    return torch.device("cpu")
+from segmentation.model import build_unet, get_device
 
 
 def dice_loss(
@@ -89,12 +83,10 @@ def save_sanity_overlays(
 
 
 def main() -> None:
+    """Parses CLI arguments and runs the training loop."""
     parser = argparse.ArgumentParser(description=__doc__)
-    repo_root = Path(__file__).resolve().parent.parent
     parser.add_argument(
-        "--dataset-root",
-        type=Path,
-        default=repo_root / "dataset" / "training",
+        "--dataset-root", type=Path, default=paths.DATASET_ROOT
     )
     parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--batch-size", type=int, default=8)
@@ -109,17 +101,13 @@ def main() -> None:
         ),
     )
     parser.add_argument(
-        "--checkpoint",
-        type=Path,
-        default=repo_root / "checkpoints" / "unet_resnet34.pt",
+        "--checkpoint", type=Path, default=paths.DEFAULT_CHECKPOINT
     )
-    parser.add_argument(
-        "--log", type=Path, default=repo_root / "results" / "train_log.csv"
-    )
+    parser.add_argument("--log", type=Path, default=paths.TRAIN_LOG)
     parser.add_argument(
         "--overlays-dir",
         type=Path,
-        default=repo_root / "results" / "sanity_overlays",
+        default=paths.OVERLAYS_DIR / "sanity_train",
     )
     parser.add_argument(
         "--resume",
@@ -144,6 +132,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    # --- Data: train split is frames not in each sequence's test set ---
     device = get_device()
     print(f"Using device: {device}")
 
@@ -155,19 +144,16 @@ def main() -> None:
     dataset = InstrumentSegDataset(train_frame_pairs)
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
-    model = smp.Unet(
-        encoder_name="resnet34",
-        encoder_weights="imagenet" if args.resume is None else None,
-        in_channels=3,
-        classes=1,
-        activation=None,
-    ).to(device)
+    # --- Model: ImageNet-pretrained encoder, unless resuming a checkpoint
+    # (whose weights replace every parameter anyway) ---
+    model = build_unet(pretrained_encoder=args.resume is None).to(device)
     if args.resume is not None:
         print(f"Resuming weights from {args.resume}")
         model.load_state_dict(torch.load(args.resume, map_location=device))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
+    # --- Training loop; the CSV log is appended to when resuming ---
     args.log.parent.mkdir(parents=True, exist_ok=True)
     args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
     log_mode = "a" if args.start_epoch > 1 else "w"
@@ -215,6 +201,7 @@ def main() -> None:
 
     print(f"Saved checkpoint to {args.checkpoint}")
 
+    # --- Qualitative sanity check on training frames ---
     save_sanity_overlays(model, dataset, device, args.overlays_dir)
     print(f"Saved sanity overlays to {args.overlays_dir}")
 

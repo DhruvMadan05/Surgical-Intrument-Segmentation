@@ -19,6 +19,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+from segmentation import paths
+
 
 def merge_dataset(
     dataset_dir: Path,
@@ -83,13 +85,10 @@ def merge_dataset(
 def main() -> None:
     """Generates binary masks for every instrument_dataset_N in the root."""
     parser = argparse.ArgumentParser(description=__doc__)
-    default_root = (
-        Path(__file__).resolve().parent.parent / "dataset" / "training"
-    )
     parser.add_argument(
         "--dataset-root",
         type=Path,
-        default=default_root,
+        default=paths.DATASET_ROOT,
         help=(
             "Directory containing instrument_dataset_N folders "
             "(default: dataset/training)"

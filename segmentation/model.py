@@ -51,6 +51,30 @@ def load_model(checkpoint_path: Path, device: torch.device) -> torch.nn.Module:
     return model
 
 
+def frame_to_tensor(
+    frame_path: Path, size: Tuple[int, int]
+) -> Tuple[Image.Image, torch.Tensor]:
+    """Loads a frame and preprocesses it into a network input.
+
+    Crops to the camera view, resizes to `size` and applies ImageNet
+    normalization.
+
+    Args:
+        frame_path: Path to a 1920x1080 frame PNG.
+        size: (width, height) the network input is resized to.
+
+    Returns:
+        (cropped full-resolution image, float tensor of shape
+        (1, 3, height, width) on the CPU). The full image is returned so
+        callers can upsample predictions back to its size.
+    """
+    full = crop_camera_view(Image.open(frame_path).convert("RGB"))
+    resized = np.array(full.resize(size)).astype(np.float32)
+    resized = (resized / 255.0 - IMAGENET_MEAN) / IMAGENET_STD
+    tensor = torch.from_numpy(resized.transpose(2, 0, 1)).float()
+    return full, tensor.unsqueeze(0)
+
+
 def make_predict_fn(
     model: torch.nn.Module,
     device: torch.device,
@@ -73,14 +97,10 @@ def make_predict_fn(
 
     def predict(frame_path: Path) -> np.ndarray:
         """Predicts a boolean foreground mask for one frame."""
-        full = crop_camera_view(Image.open(frame_path).convert("RGB"))
-        resized = np.array(full.resize(size)).astype(np.float32)
-        resized = (resized / 255.0 - IMAGENET_MEAN) / IMAGENET_STD
-        tensor = torch.from_numpy(resized.transpose(2, 0, 1)).float()
-        tensor = tensor.unsqueeze(0).to(device)
+        full, tensor = frame_to_tensor(frame_path, size)
 
         with torch.no_grad():
-            probs = torch.sigmoid(model(tensor))
+            probs = torch.sigmoid(model(tensor.to(device)))
         pred = (probs > threshold).float().cpu().squeeze().numpy()
 
         pred_img = Image.fromarray((pred * 255).astype(np.uint8))

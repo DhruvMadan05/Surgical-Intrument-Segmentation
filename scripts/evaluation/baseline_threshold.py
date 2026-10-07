@@ -4,7 +4,8 @@ Instruments in this dataset tend to be desaturated metal against
 saturated tissue, so thresholding the HSV saturation channel separates
 them better than plain grayscale intensity. Otsu's method picks the
 threshold automatically per frame; a small morphological open/close
-cleans up salt-and-pepper noise from specular highlights.
+cleans up salt-and-pepper noise from specular highlights. The predictor
+itself lives in segmentation/baseline.py.
 
 Evaluates this baseline separately on each of the 10 sequences' official
 test frames (instrument_dataset_1..8: last 75 frames per sequence;
@@ -20,30 +21,11 @@ results/metrics/baseline_threshold.json.
 import argparse
 from pathlib import Path
 
-import numpy as np
-from PIL import Image
-from skimage.filters import threshold_otsu
-from skimage.morphology import binary_closing, binary_opening, disk
-
 from segmentation import paths
-from segmentation.crop import crop_camera_view
+from segmentation.baseline import predict_mask
 from segmentation.dataset import all_sequences_test_pairs
 from segmentation.metrics import evaluate_by_sequence, save_results
 from segmentation.visualize import save_prediction_overlays
-
-
-def predict_mask(frame_path: Path) -> np.ndarray:
-    """Segments an instrument mask via Otsu thresholding on saturation.
-
-    Operates on the cropped 1280x1024 camera view only.
-    """
-    image = np.array(crop_camera_view(Image.open(frame_path).convert("HSV")))
-    saturation = image[:, :, 1]
-    thresh = threshold_otsu(saturation)
-    mask = saturation < thresh  # low saturation -> instrument
-    mask = binary_opening(mask, disk(3))
-    mask = binary_closing(mask, disk(3))
-    return mask
 
 
 def main() -> None:

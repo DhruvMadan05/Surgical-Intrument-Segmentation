@@ -6,7 +6,7 @@ architecture and preprocess frames identically.
 """
 
 from pathlib import Path
-from typing import Callable, Optional, Tuple
+from typing import Callable, Tuple
 
 import numpy as np
 import segmentation_models_pytorch as smp
@@ -72,6 +72,7 @@ def make_predict_fn(
     """
 
     def predict(frame_path: Path) -> np.ndarray:
+        """Predicts a boolean foreground mask for one frame."""
         full = crop_camera_view(Image.open(frame_path).convert("RGB"))
         resized = np.array(full.resize(size)).astype(np.float32)
         resized = (resized / 255.0 - IMAGENET_MEAN) / IMAGENET_STD

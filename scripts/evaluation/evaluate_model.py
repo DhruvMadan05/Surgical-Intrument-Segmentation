@@ -22,6 +22,7 @@ from segmentation.visualize import save_prediction_overlays
 
 
 def main() -> None:
+    """Parses CLI arguments, evaluates the checkpoint, saves results."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--dataset-root", type=Path, default=paths.DATASET_ROOT

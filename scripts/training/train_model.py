@@ -83,6 +83,7 @@ def save_sanity_overlays(
 
 
 def main() -> None:
+    """Parses CLI arguments and runs the training loop."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--dataset-root", type=Path, default=paths.DATASET_ROOT
@@ -131,6 +132,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    # --- Data: train split is frames not in each sequence's test set ---
     device = get_device()
     print(f"Using device: {device}")
 
@@ -142,6 +144,8 @@ def main() -> None:
     dataset = InstrumentSegDataset(train_frame_pairs)
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
+    # --- Model: ImageNet-pretrained encoder, unless resuming a checkpoint
+    # (whose weights replace every parameter anyway) ---
     model = build_unet(pretrained_encoder=args.resume is None).to(device)
     if args.resume is not None:
         print(f"Resuming weights from {args.resume}")
@@ -149,6 +153,7 @@ def main() -> None:
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
+    # --- Training loop; the CSV log is appended to when resuming ---
     args.log.parent.mkdir(parents=True, exist_ok=True)
     args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
     log_mode = "a" if args.start_epoch > 1 else "w"
@@ -196,6 +201,7 @@ def main() -> None:
 
     print(f"Saved checkpoint to {args.checkpoint}")
 
+    # --- Qualitative sanity check on training frames ---
     save_sanity_overlays(model, dataset, device, args.overlays_dir)
     print(f"Saved sanity overlays to {args.overlays_dir}")
 

@@ -28,7 +28,7 @@ Train and test pairs come from different mask sources:
 """
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -100,7 +100,9 @@ def test_frame_names(test_root: Path, sequence: int) -> List[str]:
     return sorted(p.name for p in mask_dir.glob("frame*.png"))
 
 
-def train_pairs(dataset_root: Path, test_root: Path = None) -> List[FramePair]:
+def train_pairs(
+    dataset_root: Path, test_root: Optional[Path] = None
+) -> List[FramePair]:
     """Training pairs for instrument_dataset_1..8.
 
     Uses every frame in each sequence NOT present in that sequence's
@@ -147,7 +149,9 @@ def train_pairs(dataset_root: Path, test_root: Path = None) -> List[FramePair]:
     return pairs
 
 
-def test_pairs(dataset_root: Path, test_root: Path = None) -> List[FramePair]:
+def test_pairs(
+    dataset_root: Path, test_root: Optional[Path] = None
+) -> List[FramePair]:
     """Official test pairs for instrument_dataset_1..8.
 
     Uses exactly the frame names present in each sequence's official
@@ -182,7 +186,7 @@ def test_pairs(dataset_root: Path, test_root: Path = None) -> List[FramePair]:
 
 
 def all_sequences_test_pairs(
-    dataset_root: Path, test_root: Path = None
+    dataset_root: Path, test_root: Optional[Path] = None
 ) -> Dict[int, List[FramePair]]:
     """Official test pairs for all 10 sequences, grouped by sequence.
 
@@ -243,7 +247,7 @@ def _sequence_test_pairs(
 
 
 def train_test_split(
-    dataset_root: Path, test_root: Path = None
+    dataset_root: Path, test_root: Optional[Path] = None
 ) -> Tuple[List[FramePair], List[FramePair]]:
     """Convenience wrapper combining train_pairs() and test_pairs()."""
     return (

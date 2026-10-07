@@ -72,6 +72,7 @@ def fix_sequence(dataset_root: Path, test_root: Path, sequence: int) -> int:
 
 
 def main() -> None:
+    """Parses CLI arguments and fixes sequences 1 and 2's test masks."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--dataset-root", type=Path, default=paths.DATASET_ROOT

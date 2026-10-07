@@ -45,6 +45,7 @@ def build_rows(baseline: dict, model: dict) -> list:
     sequences = sorted(sequence_scores(baseline))
 
     def row(label, b_iou, m_iou, b_dice, m_dice):
+        """Formats one table row; gains are model minus baseline."""
         return [
             label,
             f"{b_iou:.3f}",
@@ -152,6 +153,7 @@ def plot_comparison(baseline: dict, model: dict, out_path: Path) -> None:
 
 
 def main() -> None:
+    """Parses CLI arguments, writes the comparison table and figure."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--baseline", type=Path, default=paths.BASELINE_METRICS

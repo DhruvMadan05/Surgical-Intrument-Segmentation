@@ -25,6 +25,7 @@ REPO_ID = "maxhallan7/robotic-instrument-segmentation-miccai-2017"
 
 
 def main() -> None:
+    """Parses CLI arguments and downloads the test-split masks."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--local-dir",

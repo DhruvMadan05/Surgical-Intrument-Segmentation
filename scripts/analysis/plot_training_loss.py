@@ -72,6 +72,7 @@ def plot_training_loss(
 
 
 def main() -> None:
+    """Parses CLI arguments and plots the training loss log."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log", type=Path, default=paths.TRAIN_LOG)
     parser.add_argument(

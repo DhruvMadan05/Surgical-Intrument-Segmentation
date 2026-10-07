@@ -278,6 +278,7 @@ def plot_overall(entries: List[dict], out) -> None:
 
 
 def main() -> None:
+    """Parses CLI arguments, writes the challenge tables and figures."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", type=Path, default=paths.MODEL_METRICS)
     parser.add_argument(

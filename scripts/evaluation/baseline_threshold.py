@@ -47,6 +47,7 @@ def predict_mask(frame_path: Path) -> np.ndarray:
 
 
 def main() -> None:
+    """Parses CLI arguments, evaluates the baseline, saves results."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--dataset-root",

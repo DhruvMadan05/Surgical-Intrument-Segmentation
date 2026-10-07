@@ -33,3 +33,4 @@ TABLES_DIR = RESULTS_DIR / "tables"  # comparison tables (Markdown/CSV)
 BASELINE_METRICS = METRICS_DIR / "baseline_threshold.json"
 MODEL_METRICS = METRICS_DIR / "model_eval.json"
 TRAIN_LOG = LOGS_DIR / "train_log.csv"
+SPEED_METRICS = METRICS_DIR / "speed_benchmark.json"

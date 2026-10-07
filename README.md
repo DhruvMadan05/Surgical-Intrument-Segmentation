@@ -156,7 +156,12 @@ dataset.
 
 - **Split.** The test set of each sequence is whatever frame names exist in
   the official test masks (frames 225-299 for sequences 1-8, all 300 frames
-  for 9-10). Training uses every other frame of sequences 1-8.
+  for 9-10). Training uses every other frame of sequences 1-8. There is
+  no train/test overlap: the 1,800 training frames and 1,200 test frames
+  share no file paths and no byte-identical images. Note that the
+  sequence 1-8 test frames come from the same videos as the training
+  frames (just later in time), so only sequences 9-10 test generalization
+  to unseen videos.
 - **Metric.** Per-frame foreground IoU (and Dice), averaged over frames in
   a dataset. "Overall" is weighted by frame count, as in the challenge
   paper; an unweighted mean of sequences is also stored in the JSON.

@@ -68,6 +68,19 @@ def official_mask_dir(test_root: Path, sequence: int) -> Path:
     return seq_dir / "ground_truth" / "BinarySegmentation"
 
 
+def original_official_dir(test_root: Path, sequence: int) -> Path:
+    """Directory holding the *original* official masks for a sequence.
+
+    scripts/data_prep/fix_test_masks.py overwrote the official masks for
+    some sequences and backed the originals up to a sibling
+    *_official_backup/ folder. This returns that backup when it exists,
+    otherwise the (unmodified) official folder.
+    """
+    official = official_mask_dir(test_root, sequence)
+    backup = official.parent / f"{official.name}_official_backup"
+    return backup if backup.is_dir() else official
+
+
 def official_mask_path(
     test_root: Path, sequence: int, frame_name: str
 ) -> Path:

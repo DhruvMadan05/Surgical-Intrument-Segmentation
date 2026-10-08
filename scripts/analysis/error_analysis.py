@@ -12,7 +12,8 @@ results/figures/error_analysis/:
     for the worst frame of the worst sequences, plus a typical frame.
 and, under results/tables/, error_by_sequence.{md,csv} and
 bright_instrument_vs_iou.{md,csv} (does the model fail on near-white
-instruments, which are rare in training?).
+instruments, which are rare in training?) and error_near_border.{md,csv}
+(do errors cluster at the frame edge?).
 
 The written analysis lives in ERROR_ANALYSIS.md.
 """
@@ -167,6 +168,50 @@ def brightness_table(
             ]
         )
     return out
+
+
+# Border bands (px at 1280x1024) used for the "do errors cluster at the
+# frame edge?" table.
+BORDER_BANDS_PX = (32, 64, 128)
+
+
+def border_table(maps_path: Path) -> List[list]:
+    """Share of instrument / error pixels near the image border.
+
+    Instruments enter the view from the frame edge, so some of any error
+    concentration there is expected. The table puts each band's share of
+    ground-truth instrument pixels next to its share of false positives
+    and false negatives so the two can be compared.
+
+    Args:
+        maps_path: error_maps.npz from per_frame_errors.py.
+
+    Returns:
+        One row per band: share of image area, of instrument pixels, of
+        false-positive pixels and of false-negative pixels.
+    """
+    maps = np.load(maps_path)
+    gt, fp, fn = (
+        maps[k].sum(axis=0).astype(float) for k in ("gt", "fp", "fn")
+    )
+    height, width = gt.shape
+    block = int(maps["block"])
+    yy, xx = np.mgrid[0:height, 0:width]
+    # Distance (full-resolution px) from each cell to the nearest border.
+    dist = np.minimum.reduce([xx, width - 1 - xx, yy, height - 1 - yy]) * block
+    rows = []
+    for band in BORDER_BANDS_PX:
+        near = dist < band
+        rows.append(
+            [
+                f"< {band} px",
+                f"{near.mean():.1%}",
+                f"{gt[near].sum() / gt.sum():.1%}",
+                f"{fp[near].sum() / fp.sum():.1%}",
+                f"{fn[near].sum() / fn.sum():.1%}",
+            ]
+        )
+    return rows
 
 
 def plot_iou_distribution(rows: List[Dict], out: Path) -> None:
@@ -462,6 +507,18 @@ def main() -> None:
         args.table_dir / "bright_instrument_vs_iou.md",
         args.table_dir / "bright_instrument_vs_iou.csv",
     )
+    write_tables(
+        [
+            "Distance from image border",
+            "% of image area",
+            "% of instrument pixels",
+            "% of false-positive pixels",
+            "% of false-negative pixels",
+        ],
+        border_table(args.maps),
+        args.table_dir / "error_near_border.md",
+        args.table_dir / "error_near_border.csv",
+    )
     plot_iou_distribution(rows, args.figure_dir / "iou_distribution.png")
     plot_error_types(rows, args.figure_dir / "error_types.png")
     plot_error_heatmaps(args.maps, args.figure_dir / "error_heatmaps.png")
@@ -472,7 +529,11 @@ def main() -> None:
         args.test_root,
         args.figure_dir / "worst_frames.png",
     )
-    for name in ("error_by_sequence", "bright_instrument_vs_iou"):
+    for name in (
+        "error_by_sequence",
+        "bright_instrument_vs_iou",
+        "error_near_border",
+    ):
         print((args.table_dir / f"{name}.md").read_text())
     print(f"Saved figures to {args.figure_dir}")
 

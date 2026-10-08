@@ -1,0 +1,4 @@
+Sequence,Training frames with no instrument,Model predicted nothing (correct),Model hallucinated an instrument,False-alarm rate
+5,3,3,0,0%
+7,19,7,12,63%
+All,22,10,12,55%

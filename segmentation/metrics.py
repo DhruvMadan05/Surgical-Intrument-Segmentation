@@ -82,6 +82,7 @@ def evaluate_by_sequence(
     predict_fn: Callable[[Path], np.ndarray],
     method: str,
     extra: Optional[Dict] = None,
+    keep_per_frame: bool = False,
 ) -> Dict:
     """Evaluates a predictor on every sequence and summarizes the results.
 
@@ -102,6 +103,10 @@ def evaluate_by_sequence(
         method: Short identifier stored in the output (e.g.
             "unet_resnet34").
         extra: Additional top-level fields to store (e.g. checkpoint).
+        keep_per_frame: If True, each per_sequence entry also carries
+            per_frame_iou / per_frame_dice lists (in `pairs` order) so
+            callers can write frame-level results. Off by default to
+            keep the saved JSON small.
 
     Returns:
         A JSON-serializable dict with per_sequence, overall_mean_of_
@@ -119,6 +124,9 @@ def evaluate_by_sequence(
             "mean_dice": results["mean_dice"],
             "num_frames": results["num_frames"],
         }
+        if keep_per_frame:
+            per_sequence[str(n)]["per_frame_iou"] = results["per_frame_iou"]
+            per_sequence[str(n)]["per_frame_dice"] = results["per_frame_dice"]
         print(
             f"instrument_dataset_{n}: {results['num_frames']} frames, "
             f"IoU={results['mean_iou']:.4f}, "

@@ -1,0 +1,55 @@
+{
+  "method": "unet_resnet34_on_training_frames",
+  "checkpoint": "/Users/dhruvmadan/src/classes/RBE544/instrument_segmentation/checkpoints/unet_resnet34.pt",
+  "per_sequence": {
+    "1": {
+      "mean_iou": 0.9439857180830394,
+      "mean_dice": 0.9711401682369072,
+      "num_frames": 225
+    },
+    "2": {
+      "mean_iou": 0.9583903238996367,
+      "mean_dice": 0.9787323963125499,
+      "num_frames": 225
+    },
+    "3": {
+      "mean_iou": 0.9677691924992694,
+      "mean_dice": 0.9835924216864015,
+      "num_frames": 225
+    },
+    "4": {
+      "mean_iou": 0.95802644486801,
+      "mean_dice": 0.978542221527121,
+      "num_frames": 225
+    },
+    "5": {
+      "mean_iou": 0.963815245058868,
+      "mean_dice": 0.9815411192955384,
+      "num_frames": 225
+    },
+    "6": {
+      "mean_iou": 0.955215543019435,
+      "mean_dice": 0.9770458506112365,
+      "num_frames": 225
+    },
+    "7": {
+      "mean_iou": 0.9051121511863913,
+      "mean_dice": 0.9252777199057265,
+      "num_frames": 225
+    },
+    "8": {
+      "mean_iou": 0.9273259221328637,
+      "mean_dice": 0.9578814990986317,
+      "num_frames": 225
+    }
+  },
+  "overall_mean_of_sequences": {
+    "mean_iou": 0.9474550675934392,
+    "mean_dice": 0.969219174584264
+  },
+  "overall_pooled": {
+    "mean_iou": 0.9474550675934391,
+    "mean_dice": 0.969219174584264,
+    "num_frames": 1800
+  }
+}

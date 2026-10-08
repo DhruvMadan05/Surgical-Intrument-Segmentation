@@ -19,6 +19,10 @@ Buckets are `boundary` (<= BOUNDARY_PX), `near`, and `gross`
 partly annotation ambiguity (blur, polygon-labelled edges); gross errors
 are whole regions that were hallucinated or missed.
 
+`bright_frac` is the share of ground-truth instrument pixels that are
+very bright and near-white (see segmentation/appearance.py), used to test
+whether failures coincide with unusual instrument appearance.
+
 Read the results with scripts/analysis/error_analysis.py.
 """
 
@@ -32,6 +36,7 @@ from PIL import Image
 from scipy.ndimage import distance_transform_edt
 
 from segmentation import paths
+from segmentation.appearance import bright_instrument_fraction
 from segmentation.crop import crop_camera_view
 from segmentation.dataset import InstrumentSegDataset, all_sequences_test_pairs
 from segmentation.metrics import dice, iou
@@ -52,6 +57,7 @@ COLUMNS = [
     "dice",
     "gt_frac",
     "pred_frac",
+    "bright_frac",
     "fp_px",
     "fn_px",
     "fp_boundary",
@@ -160,6 +166,7 @@ def main() -> None:
                     dice(pred, gt),
                     gt.mean(),
                     pred.mean(),
+                    bright_instrument_fraction(frame_path, mask_path),
                     int(fp.sum()),
                     int(fn.sum()),
                     fp_b["boundary"],

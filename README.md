@@ -57,9 +57,19 @@ for std, median and p95.
 
 ![Speed benchmark](results/figures/speed_benchmark.png)
 
+### Error analysis
+
+Why and where the model fails (failure modes, which sequences, which parts of
+the image) is written up in [ERROR_ANALYSIS.md](ERROR_ANALYSIS.md). In short:
+most frames score well and about half of the remaining error is thin edge
+slips; the large failures are a few episodes, mainly a bright instrument body
+that is missed in sequence 7 and glossy tissue or unlabelled tools predicted as
+instrument.
+
 Full tables: [`results/tables/`](results/tables/)
 (`baseline_vs_model`, `challenge_per_dataset`, `challenge_leaderboard`,
-`speed_benchmark`).
+`speed_benchmark`, `error_by_sequence`, `bright_instrument_vs_iou`,
+`error_near_border`).
 
 ## Repository layout
 
@@ -68,6 +78,7 @@ segmentation/            Importable library code shared by all scripts
   paths.py                 Default file locations (dataset, results, ...)
   crop.py                  1920x1080 frame -> 1280x1024 camera view
   baseline.py              Otsu-threshold baseline predictor
+  appearance.py            Instrument brightness statistic (error analysis)
   dataset.py               Train/test split and PyTorch Dataset
   metrics.py               IoU / Dice, per-sequence evaluation, JSON output
   model.py                 U-Net builder, device selection, inference
@@ -81,7 +92,7 @@ scripts/
   analysis/                Plots and comparison tables from saved results
 reference/                 Numbers transcribed from the challenge paper
 results/
-  metrics/                 Evaluation + speed JSON (baseline_threshold, model_eval, speed_benchmark)
+  metrics/                 Evaluation, speed, per-frame error data
   logs/                    Training loss log (train_log.csv)
   overlays/                Qualitative prediction images
   figures/                 Plots (PNG)
@@ -154,6 +165,10 @@ Then time both methods (per-frame latency and rate in Hz):
 ```bash
 # -> results/metrics/speed_benchmark.json
 python3 -m scripts.evaluation.benchmark_speed
+
+# Per-frame IoU and error breakdown for every test frame (~4 min)
+# -> results/metrics/per_frame_errors.csv, error_maps.npz
+python3 -m scripts.evaluation.per_frame_errors
 ```
 
 It times the baseline (CPU) and the U-Net on every available device (CPU,
@@ -168,6 +183,7 @@ python3 -m scripts.analysis.plot_training_loss
 python3 -m scripts.analysis.compare_baseline_vs_model
 python3 -m scripts.analysis.compare_to_challenge
 python3 -m scripts.analysis.plot_speed_benchmark
+python3 -m scripts.analysis.error_analysis
 ```
 
 ## What each script does
@@ -181,9 +197,11 @@ python3 -m scripts.analysis.plot_speed_benchmark
 | `evaluation/baseline_threshold.py` | Otsu saturation-threshold baseline | `metrics/baseline_threshold.json`, `overlays/baseline/` |
 | `evaluation/evaluate_model.py` | Evaluate a trained checkpoint | `metrics/model_eval.json`, `overlays/model/` |
 | `evaluation/benchmark_speed.py` | Time per-frame latency and rate (Hz) of baseline and U-Net | `metrics/speed_benchmark.json` |
+| `evaluation/per_frame_errors.py` | Per-frame IoU and false-positive/negative breakdown by distance from the true edge | `metrics/per_frame_errors.csv`, `metrics/error_maps.npz` |
 | `analysis/plot_training_loss.py` | Plot loss per epoch | `figures/training_loss.png` |
 | `analysis/compare_baseline_vs_model.py` | Baseline vs U-Net per sequence | `figures/baseline_vs_model.png`, `tables/baseline_vs_model.*` |
 | `analysis/compare_to_challenge.py` | Compare to the 10 challenge teams (best, mean, rank) | `figures/challenge_*.png`, `tables/challenge_*.*` |
+| `analysis/error_analysis.py` | Figures and tables for ERROR_ANALYSIS.md | `figures/error_analysis/`, `tables/error_*.md`, `tables/bright_instrument_vs_iou.md` |
 | `analysis/plot_speed_benchmark.py` | Table and chart of the speed results | `figures/speed_benchmark.png`, `tables/speed_benchmark.*` |
 
 ## Method notes

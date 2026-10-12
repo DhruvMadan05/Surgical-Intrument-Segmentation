@@ -1,0 +1,80 @@
+{
+  "system": {
+    "platform": "macOS-27.0-arm64-arm-64bit",
+    "processor": "arm",
+    "python": "3.9.6",
+    "torch": "2.8.0",
+    "torch_cpu_threads": 4
+  },
+  "settings": {
+    "num_frames": 100,
+    "warmup": 10,
+    "model_input_size": [
+      320,
+      256
+    ],
+    "checkpoint": "/Users/dhruvmadan/src/classes/RBE544/instrument_segmentation/checkpoints/unet_resnet34.pt"
+  },
+  "benchmarks": {
+    "otsu_baseline_cpu": {
+      "description": "Otsu saturation threshold, end to end (PNG decode to 1280x1024 mask)",
+      "device": "cpu",
+      "mean_ms": 99.07513960000004,
+      "std_ms": 4.273393107729556,
+      "median_ms": 98.23922899999893,
+      "p95_ms": 102.09580000000001,
+      "min_ms": 91.87704100000005,
+      "max_ms": 124.28987499999965,
+      "hz": 10.09334939155614,
+      "num_frames": 100
+    },
+    "unet_cpu": {
+      "description": "U-Net end to end (PNG decode, preprocess, forward, upsample)",
+      "device": "cpu",
+      "mean_ms": 95.30693124000013,
+      "std_ms": 1.9810150000670688,
+      "median_ms": 95.3640205000008,
+      "p95_ms": 97.95094794999741,
+      "min_ms": 87.2613340000008,
+      "max_ms": 100.7182920000016,
+      "hz": 10.492416312112905,
+      "num_frames": 100
+    },
+    "unet_cpu_forward": {
+      "description": "U-Net forward pass only, 320x256 input",
+      "device": "cpu",
+      "mean_ms": 73.12423085000042,
+      "std_ms": 1.3259991980845773,
+      "median_ms": 72.89595850000019,
+      "p95_ms": 75.97031460000156,
+      "min_ms": 71.33233400000094,
+      "max_ms": 78.5494170000014,
+      "hz": 13.675357516597993,
+      "num_frames": 100
+    },
+    "unet_mps": {
+      "description": "U-Net end to end (PNG decode, preprocess, forward, upsample)",
+      "device": "mps",
+      "mean_ms": 46.12874003000037,
+      "std_ms": 3.1292690498176663,
+      "median_ms": 46.057520500003335,
+      "p95_ms": 51.34843750000044,
+      "min_ms": 35.955207999997185,
+      "max_ms": 56.54612500000411,
+      "hz": 21.67845901166254,
+      "num_frames": 100
+    },
+    "unet_mps_forward": {
+      "description": "U-Net forward pass only, 320x256 input",
+      "device": "mps",
+      "mean_ms": 19.997021230000342,
+      "std_ms": 0.20063641408675095,
+      "median_ms": 20.004688000000215,
+      "p95_ms": 20.321106599996952,
+      "min_ms": 19.517790999998397,
+      "max_ms": 20.58979200000266,
+      "hz": 50.0074480342982,
+      "num_frames": 100
+    }
+  }
+}

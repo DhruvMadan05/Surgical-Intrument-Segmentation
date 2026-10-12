@@ -1,0 +1,6 @@
+Method,Scope,Mean (ms),Std (ms),Median (ms),p95 (ms),Rate (Hz)
+Otsu baseline (CPU),end to end,99.1,4.3,98.2,102.1,10.1
+U-Net (CPU),end to end,95.3,2.0,95.4,98.0,10.5
+U-Net (Apple GPU),end to end,46.1,3.1,46.1,51.3,21.7
+U-Net forward only (CPU),forward pass only,73.1,1.3,72.9,76.0,13.7
+U-Net forward only (Apple GPU),forward pass only,20.0,0.2,20.0,20.3,50.0
